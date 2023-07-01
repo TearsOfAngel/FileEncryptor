@@ -8,6 +8,7 @@ public class DecryptorThread extends Thread {
     private File file;
     private String password;
     private boolean isErrors;
+    private String outPath;
 
     public DecryptorThread(GUIForm form) {
         this.form = form;
@@ -25,7 +26,7 @@ public class DecryptorThread extends Thread {
     public void run() {
         onStart();
         try {
-            String outPath = getOutPath();
+            outPath = getOutPath();
             ZipFile zipFile = new ZipFile(file);
             zipFile.setPassword(password.toCharArray());
             zipFile.extractAll(outPath);
@@ -33,6 +34,7 @@ public class DecryptorThread extends Thread {
             if (ex.getMessage().contains("Wrong Password")) {
                 form.showWarning("Неверный пароль");
                 isErrors = true;
+                deleteFileOrDirectory(outPath);
             } else {
                 form.showWarning(ex.getMessage());
             }
@@ -49,6 +51,29 @@ public class DecryptorThread extends Thread {
         if (!isErrors) {
             form.showFinished();
         }
+    }
+
+    private void deleteFileOrDirectory(String path) {
+        File fileOrDirectory = new File(path);
+        if (fileOrDirectory.isDirectory()) {
+            deleteDirectory(fileOrDirectory);
+        } else {
+            fileOrDirectory.delete();
+        }
+    }
+
+    private void deleteDirectory(File directory) {
+        File[] files = directory.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    deleteDirectory(file);
+                } else {
+                    file.delete();
+                }
+            }
+        }
+        directory.delete();
     }
 
     private String getOutPath() {
